@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: repo-handler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: repo-handler
+  template:
+    metadata:
+      labels:
+        app: repo-handler
+    spec:
+      containers:
+        - name: repo-handler
+          image: python:3.12  # Using Python base image
+          command: ["/bin/sh", "-c", "mkdir -p /mnt/app && tar -xzf /app/app-code.tar.gz -C /mnt/app && cd /mnt/app && ls && pip install -r /mnt/app/requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000"]
+          volumeMounts:
+            - mountPath: "/mnt/app"    # Writable directory for extracted code
+              name: app-storage
+            - mountPath: "/app/app-code.tar.gz"  # Mount tarball from ConfigMap
+              subPath: app-code.tar.gz
+              name: app-code
+            - mountPath: "/data/repos"  # PVC for repository storage
+              name: repo-storage
+          ports:
+            - containerPort: 8000
+      volumes:
+        - name: app-storage
+          persistentVolumeClaim:
+            claimName: app-code-pvc  # PVC for storing the extracted app
+        - name: app-code
+          configMap:
+            name: app-code-configmap  # ConfigMap with tarball of application code
+        - name: repo-storage
+          persistentVolumeClaim:
+            claimName: repo-storage-pvc  # PVC for repository storage
