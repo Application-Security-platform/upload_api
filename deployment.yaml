@@ -14,25 +14,39 @@ spec:
     spec:
       containers:
         - name: repo-handler
-          image: python:3.12  # Using Python base image
-          command: ["/bin/sh", "-c", "mkdir -p /mnt/app && tar -xzf /app/app-code.tar.gz -C /mnt/app && cd /mnt/app && ls && pip install -r /mnt/app/requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000"]
+          image: python:3.12-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apt-get update && \
+              apt-get install -y git librdkafka-dev gcc python3-dev && \
+              mkdir -p /mnt/app && \
+              tar -xzf /app/app-code.tar.gz -C /mnt/app && \
+              cd /mnt/app && \
+              pip install --no-cache-dir -r /mnt/app/requirements.txt && \
+              uvicorn main:app --host 0.0.0.0 --port 8000
           volumeMounts:
-            - mountPath: "/mnt/app"    # Writable directory for extracted code
+            - mountPath: "/mnt/app"
               name: app-storage
-            - mountPath: "/app/app-code.tar.gz"  # Mount tarball from ConfigMap
+            - mountPath: "/app/app-code.tar.gz"
               subPath: app-code.tar.gz
               name: app-code
-            - mountPath: "/data/repos"  # PVC for repository storage
+            - mountPath: "/data/repos"
               name: repo-storage
           ports:
             - containerPort: 8000
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka-service.default.svc.cluster.local:9092"
+            - name: PYTHONUNBUFFERED
+              value: "1"
       volumes:
         - name: app-storage
           persistentVolumeClaim:
-            claimName: app-code-pvc  # PVC for storing the extracted app
+            claimName: app-code-pvc
         - name: app-code
           configMap:
-            name: app-code-configmap  # ConfigMap with tarball of application code
+            name: app-code-configmap
         - name: repo-storage
           persistentVolumeClaim:
-            claimName: repo-storage-pvc  # PVC for repository storage
+            claimName: repo-storage-pvc
