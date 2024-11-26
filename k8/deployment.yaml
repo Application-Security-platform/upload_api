@@ -20,17 +20,12 @@ spec:
             - |
               apt-get update && \
               apt-get install -y git librdkafka-dev gcc python3-dev && \
-              mkdir -p /mnt/app && \
-              tar -xzf /app/app-code.tar.gz -C /mnt/app && \
-              cd /mnt/app && \
-              pip install --no-cache-dir -r /mnt/app/requirements.txt && \
+              cd /app/upload_api && \
+              pip install --no-cache-dir -r requirements.txt && \
               uvicorn main:app --host 0.0.0.0 --port 8000
           volumeMounts:
-            - mountPath: "/mnt/app"
-              name: app-storage
-            - mountPath: "/app/app-code.tar.gz"
-              subPath: app-code.tar.gz
-              name: app-code
+            - name: app-code
+              mountPath: /app/upload_api
             - mountPath: "/data/repos"
               name: repo-storage
           ports:
@@ -41,9 +36,6 @@ spec:
             - name: PYTHONUNBUFFERED
               value: "1"
       volumes:
-        - name: app-storage
-          persistentVolumeClaim:
-            claimName: app-code-pvc
         - name: app-code
           configMap:
             name: app-code-configmap
