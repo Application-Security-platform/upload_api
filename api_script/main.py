@@ -14,7 +14,7 @@ import sys
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-KAFKA_BOOTSTRAP_SERVERS = 'kafka-service.default.svc.cluster.local:9092'
+KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
 
 # Set up logging
 logging.basicConfig(

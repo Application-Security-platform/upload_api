@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: repo-handler
-          image: python:3.12-slim
+          image: upload_api:latest
           command: ["/bin/sh", "-c"]
           args:
             - |
